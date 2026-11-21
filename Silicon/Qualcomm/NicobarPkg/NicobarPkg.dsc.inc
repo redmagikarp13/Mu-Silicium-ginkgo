@@ -25,7 +25,7 @@
 !include QcomPkg/QcomPkg.dsc.inc
 
 [BuildOptions]
-  *_*_AARCH64_CC_FLAGS = -march=armv8-a+crypto+rcpc
+  *_*_AARCH64_CC_FLAGS = -march=armv8-a+crypto
 
 [PcdsFixedAtBuild]
   #

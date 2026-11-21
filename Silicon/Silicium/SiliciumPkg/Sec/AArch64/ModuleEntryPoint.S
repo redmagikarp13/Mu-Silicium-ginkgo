@@ -13,6 +13,19 @@
 .set CTRL_SPAN_BIT, BIT23
 
 ASM_FUNC (_ModuleEntryPoint)
+  // Select SP_ELx before setting up the stack.
+  msr   SPSel, #1
+  isb
+
+  // Clean and invalidate stale D-cache lines while preserving x0 (ABL FDT pointer).
+  mov   x20, x0
+  bl    ASM_PFX (SecCleanInvalidateDataCacheAll)
+  mov   x0, x20
+
+  // Save incoming x0 (FDT address) in RAM for SecMain -> gSiliciumEntryArgHobGuid.
+  adr   x1, ASM_PFX (gSecEntryArg0)
+  str   x0, [x1]
+
   // Do Platform Specific Initialization
   bl    ASM_PFX (PlatformAssemblyInitialize)
 
@@ -61,3 +74,9 @@ ASM_PFX (MainEntryPoint):
 
   // Do Infinite Spin
   b     .
+
+  // First argument of the previous stage, written once at entry
+  .align 3
+  .global ASM_PFX (gSecEntryArg0)
+ASM_PFX (gSecEntryArg0):
+  .quad 0

@@ -18,6 +18,11 @@
 
 #include "Sec.h"
 
+// First argument (x0) of the previous stage, saved by ModuleEntryPoint.S
+extern UINT64  gSecEntryArg0;
+// Helper.S: clean and invalidate every data cache level by set/way.
+extern VOID    SecCleanInvalidateDataCacheAll (VOID);
+
 #ifndef MDEPKG_NDEBUG
 STATIC
 VOID
@@ -130,17 +135,27 @@ SecMain (VOID)
     return;
   }
 
+  // Pass on what the previous stage handed over in x0 (FDT address).
+  {
+    UINT64  EntryArg = gSecEntryArg0;
+
+    DEBUG ((EFI_D_WARN, "SEC: entry x0 = 0x%lx\n", EntryArg));
+    BuildGuidDataHob (&gSiliciumEntryArgHobGuid, &EntryArg, sizeof (EntryArg));
+  }
+
   // Run Library Cconstructors
   ProcessLibraryConstructorList ();
 
   // Decompress all FVs
   Status = DecompressFirstFv ();
+  DEBUG ((EFI_D_WARN, "SEC: FV decompressed (%r)\n", Status));
   if (EFI_ERROR (Status)) {
     DEBUG ((EFI_D_ERROR, "Failed to Decompress FV! Status = %r\n", Status));
     return;
   }
 
   // Load DXE Core
+  DEBUG ((EFI_D_WARN, "SEC: loading DXE core\n"));
   Status = LoadDxeCoreFromFv (NULL, 0);
   if (EFI_ERROR (Status)) {
     DEBUG ((EFI_D_ERROR, "Failed to Load DXE Core! Status = %r\n", Status));
@@ -150,6 +165,9 @@ SecMain (VOID)
 VOID
 SecEntry (VOID)
 {
+  // Clean and invalidate stale D-cache lines before disabling D-cache.
+  SecCleanInvalidateDataCacheAll ();
+
   // Disable Data Cache
   ArmDisableDataCache ();
 
@@ -159,9 +177,9 @@ SecEntry (VOID)
   // Enable Instruction Cache
   ArmEnableInstructionCache ();
 
-  // Invalidate Stack & UEFI FD D-Cache
-  InvalidateDataCacheRange ((VOID *)FixedPcdGet64 (PcdCPUCoresStackBase), FixedPcdGet32 (PcdCPUCorePrimaryStackSize));
-  InvalidateDataCacheRange ((VOID *)FixedPcdGet64 (PcdFdBaseAddress),     FixedPcdGet32 (PcdFdSize));
+  // Write back and invalidate Stack & UEFI FD D-Cache
+  WriteBackInvalidateDataCacheRange ((VOID *)FixedPcdGet64 (PcdCPUCoresStackBase), FixedPcdGet32 (PcdCPUCorePrimaryStackSize));
+  WriteBackInvalidateDataCacheRange ((VOID *)FixedPcdGet64 (PcdFdBaseAddress),     FixedPcdGet32 (PcdFdSize));
 
   // Verify Exception Vector Table
   ASSERT (((UINTN)SecVectorTable & ARM_VECTOR_TABLE_ALIGNMENT) == 0);

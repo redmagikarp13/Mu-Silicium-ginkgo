@@ -44,4 +44,53 @@ ASM_FUNC (SetupExceptionLevel2)
 
   ret
 
+//
+// Cleans and invalidates every data cache level up to the Level of Coherence by set/way.
+//
+ASM_FUNC (SecCleanInvalidateDataCacheAll)
+  dmb   sy
+  mrs   x0, clidr_el1
+  and   x3, x0, #0x7000000          // LoC, shifted
+  lsr   x3, x3, #23                 // LoC * 2
+  cbz   x3, 5f
+  // SM6125 (Kryo 260) is ARMv8.0-A: no ID_AA64MMFR2_EL1 / CCIDX.
+  mov   x8, #0
+  mov   x10, #0                     // level * 2
+1:
+  add   x2, x10, x10, lsr #1
+  lsr   x1, x0, x2
+  and   x1, x1, #7                  // cache type of this level
+  cmp   x1, #2
+  b.lt  4f                          // no data cache here
+  msr   csselr_el1, x10
+  isb
+  mrs   x1, ccsidr_el1
+  and   x2, x1, #7
+  add   x2, x2, #4                  // log2 (line bytes)
+  ubfx  x4, x1, #3, #10             // associativity - 1
+  ubfx  x7, x1, #13, #15            // sets - 1
+  clz   w5, w4                      // bit position of the way field
+2:
+  mov   x9, x4
+3:
+  lsl   x6, x9, x5
+  orr   x11, x10, x6                // way and level
+  lsl   x6, x7, x2
+  orr   x11, x11, x6                // set
+  dc    cisw, x11
+  subs  x9, x9, #1
+  b.ge  3b
+  subs  x7, x7, #1
+  b.ge  2b
+4:
+  add   x10, x10, #2
+  cmp   x3, x10
+  b.gt  1b
+5:
+  mov   x10, #0
+  msr   csselr_el1, x10
+  dsb   sy
+  isb
+  ret
+
 ASM_FUNCTION_REMOVE_IF_UNREFERENCED

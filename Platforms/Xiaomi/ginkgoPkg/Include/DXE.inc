@@ -35,6 +35,8 @@
   INF Binaries/ginkgo/QcomPkg/Drivers/ULogDxe/ULogDxe.inf
   INF Binaries/ginkgo/QcomPkg/Drivers/NpaDxe/NpaDxe.inf
 
+  INF UniXNUPkg/Driver/UniXNURamDiskDxe/UniXNURamDiskDxe.inf
+  INF DarwinBootPkg/Driver/DarwinBoot.inf
   INF MdeModulePkg/Universal/Disk/DiskIoDxe/DiskIoDxe.inf
   INF MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
   INF FatPkg/EnhancedFatDxe/Fat.inf

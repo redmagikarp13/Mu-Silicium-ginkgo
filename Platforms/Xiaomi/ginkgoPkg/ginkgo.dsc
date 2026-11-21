@@ -54,6 +54,7 @@
   gSiliciumPkgTokenSpaceGuid.PcdFrameBufferWidth|1080
   gSiliciumPkgTokenSpaceGuid.PcdFrameBufferHeight|2340
   gSiliciumPkgTokenSpaceGuid.PcdFrameBufferColorDepth|32
+  gSiliciumPkgTokenSpaceGuid.PcdFrameBufferDelay|0
 
   #
   # Platform PEI
@@ -71,8 +72,21 @@
   #
   ConfigurationMapLib|ginkgoPkg/Library/ConfigurationMapLib/ConfigurationMapLib.inf
 
+  #
+  # UniXNU Libraries
+  #
+  UniXNULib|UniXNUPkg/Library/UniXNULib/UniXNULib.inf
+
 [Components]
   #
   # ACPI Tables
   #
   ginkgo/AcpiTables.inf
+
+  #
+  # UniXNU
+  #
+  UniXNUPkg/Application/UniXNU/UniXNU.inf
+  UniXNUPkg/Driver/UniXNUDxe/UniXNUDxe.inf
+  UniXNUPkg/Driver/UniXNURamDiskDxe/UniXNURamDiskDxe.inf
+  DarwinBootPkg/Driver/DarwinBoot.inf
